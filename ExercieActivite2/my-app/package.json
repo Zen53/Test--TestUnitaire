@@ -15,6 +15,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --coverage --watchAll=false",
+    "jsdoc": "jsdoc -R ./README.md -c ./jsdoc.config.json -r -d ./public/docs",
+    "cypress": "cypress open",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -37,6 +39,8 @@
   },
   "devDependencies": {
     "@testing-library/user-event": "^14.6.1",
+    "cypress": "^15.10.0",
+    "jsdoc": "^4.0.5",
     "react-test-renderer": "^19.2.4"
   }
 }

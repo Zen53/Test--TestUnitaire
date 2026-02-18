@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>Formulaire d'Enregistrement React</h1>
+<p>Une application React robuste avec un formulaire d'enregistrement complet, validations côté client, et gestion du stockage localStorage. Ce projet démontre les meilleures pratiques en React testing avec une couverture de test de <strong>99.11%</strong>.</p>
+<h2>🎯 Objectifs du Projet</h2>
+<p>Ce projet met en pratique :</p>
+<ul>
+<li>✅ Développement React avec hooks (useState)</li>
+<li>✅ Validations côté client exhaustives</li>
+<li>✅ Gestion d'état et localStorage</li>
+<li>✅ Tests unitaires avec Jest/React Testing Library</li>
+<li>✅ Tests d'intégration complets</li>
+<li>✅ Architecture modulaire et maintenable</li>
+</ul>
+<h2>🚀 Démarrage Rapide</h2>
+<pre class="prettyprint source lang-bash"><code># Installation
+npm install
+
+# Développement
+npm start
+
+# Tests
+npm test
+
+# Tests avec couverture
+npm run test -- --coverage --collectCoverageFrom=&quot;!src/reportWebVitals.js&quot; --collectCoverageFrom=&quot;!src/index.js&quot; --watchAll=false
+
+# Build production
+npm run build
+</code></pre>
+<h2>📋 Fonctionnalités</h2>
+<h3>Formulaire d'Enregistrement</h3>
+<ul>
+<li><strong>6 champs validés</strong> : Prénom, Nom, Email, Date de naissance, Ville, Code postal</li>
+<li><strong>Validations robustes</strong> :
+<ul>
+<li>✅ Noms/Prénoms : 2-50 caractères, support accents et tirets</li>
+<li>✅ Email : Validation format</li>
+<li>✅ Date de naissance : <strong>Minimum 18 ans</strong> (bloque les mineurs)</li>
+<li>✅ Code postal : Format français exact (5 chiffres)</li>
+<li>✅ Ville : 2-50 caractères, support accents et tirets</li>
+</ul>
+</li>
+</ul>
+<h3>Gestion des Données</h3>
+<ul>
+<li>💾 Sauvegarde persisted dans localStorage</li>
+<li>📦 Support de multiples utilisateurs</li>
+<li>🔍 Chaque enregistrement inclut ID unique et timestamp</li>
+</ul>
+<h3>UX/UI</h3>
+<ul>
+<li>📝 Messages d'erreur spécifiques par champ</li>
+<li>✨ Message de succès avec fermeture auto (3s)</li>
+<li>🔄 Nettoyage des erreurs lors de la saisie</li>
+<li>🔁 Réinitialisation du formulaire après succès</li>
+</ul>
+<h2>📊 Couverture de Test : 99.11%</h2>
+<pre class="prettyprint source"><code>✅ Tests Unitaires : 51 tests (validations.test.js)
+✅ Tests d'Intégration : 15 tests (RegisterForm.test.js)
+✅ Tests de Composant : 1 test (App.test.js)
+
+Métriques:
+- Statements: 99.11%
+- Branches: 98.76%
+- Functions: 100%
+- Lines: 99.09%
+</code></pre>
+<h3>Exécution des Tests</h3>
+<p>Tous les tests passent avec succès :</p>
+<pre class="prettyprint source"><code>Test Suites: 3 passed, 3 total ✅
+Tests: 66 passed, 66 total ✅
+Snapshots: 0 total
+Time: ~5s
+</code></pre>
+<h2>📁 Structure du Projet</h2>
+<pre class="prettyprint source"><code>src/
+├── validations.js              # Logique de validation pure (100%)
+├── validations.test.js         # 51 tests unitaires
+├── App.js                      # Composant principal (100%)
+├── App.test.js                 # Test du composant App
+├── App.css
+├── components/
+│   ├── RegisterForm.js         # Composant formulaire (96.96%)
+│   ├── RegisterForm.test.js    # 15 tests d'intégration
+│   └── RegisterForm.css
+├── DOCUMENTATION.md            # Documentation complète
+└── index.js
+
+</code></pre>
+<h2>🧪 Exemples de Tests</h2>
+<h3>Tests Unitaires (Validations)</h3>
+<pre class="prettyprint source lang-javascript"><code>// Exemple: Validation de majorité
+it('should reject someone under 18', () => {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - 17);
+  const dateString = date.toISOString().split('T')[0];
+  
+  const result = validateDateOfBirth(dateString);
+  expect(result.isValid).toBe(false);
+  expect(result.error).toContain('18 ans');
+});
+</code></pre>
+<h3>Tests d'Intégration (Composant)</h3>
+<pre class="prettyprint source lang-javascript"><code>// Exemple: Soumission réussie
+it('should successfully submit valid form and save to localStorage', async () => {
+  render(&lt;RegisterForm />);
+  
+  // Remplir le formulaire...
+  fireEvent.change(screen.getByTestId('input-firstName'), 
+    { target: { value: 'Jean' } });
+  
+  // Soumettre
+  fireEvent.click(screen.getByRole('button', { name: /S'enregistrer/ }));
+  
+  // Vérifier la sauvegarde
+  await waitFor(() => {
+    const users = JSON.parse(localStorage.getItem('users'));
+    expect(users).toHaveLength(1);
+  });
+});
+</code></pre>
+<h2>🔍 Cas de Test Couverts</h2>
+<h3>✅ Validations Positives</h3>
+<ul>
+<li>Prénoms simples et composés (Jean, Jean-Claude)</li>
+<li>Prénoms avec accents (Joël, José)</li>
+<li>Emails valides avec domaines multiples</li>
+<li>Dates de majorité exacte et dépassée</li>
+<li>Codes postaux français</li>
+<li>Villes simples et composées</li>
+</ul>
+<h3>❌ Validations Négatives</h3>
+<ul>
+<li>Noms trop courts (&lt;2 chars) / longs (&gt;50)</li>
+<li>Caractères invalides (chiffres, @, etc.)</li>
+<li>Emails invalides (pas @, pas domaine)</li>
+<li>Personnes mineures</li>
+<li>Codes postaux invalides</li>
+<li>Dates futures/invalides</li>
+</ul>
+<h3>🔗 Cas d'Intégration</h3>
+<ul>
+<li>Soumission avec champs vides</li>
+<li>Erreurs multiples simultanées</li>
+<li>Sauvegarde unique et multiple</li>
+<li>Message de succès et disparition</li>
+<li>Nettoyage du formulaire</li>
+<li>localStorage persistant</li>
+</ul>
+<h2>💾 Données Stockées</h2>
+<p>Structure dans localStorage:</p>
+<pre class="prettyprint source lang-javascript"><code>{
+  &quot;users&quot;: [
+    {
+      &quot;id&quot;: 1705102030000,
+      &quot;firstName&quot;: &quot;Jean&quot;,
+      &quot;lastName&quot;: &quot;Dupont&quot;,
+      &quot;email&quot;: &quot;jean@example.com&quot;,
+      &quot;dateOfBirth&quot;: &quot;2000-01-01&quot;,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;postalCode&quot;: &quot;75001&quot;,
+      &quot;registeredAt&quot;: &quot;2025-02-13T10:30:45.123Z&quot;
+    }
+  ]
+}
+</code></pre>
+<h2>📖 Fonction de Validation</h2>
+<p>Chaque fonction retourne :</p>
+<pre class="prettyprint source lang-javascript"><code>{
+  isValid: boolean,
+  error: string  // Message d'erreur si invalide
+}
+</code></pre>
+<p>Exemples:</p>
+<pre class="prettyprint source lang-javascript"><code>validateName('Jean')           // { isValid: true, error: '' }
+validateName('J')              // { isValid: false, error: '...' }
+validateEmail('user@test.com') // { isValid: true, error: '' }
+validatePostalCode('75001')    // { isValid: true, error: '' }
+validatePostalCode('750')      // { isValid: false, error: '...' }
+</code></pre>
+<h2>🛠️ Commandes Disponibles</h2>
+<table>
+<thead>
+<tr>
+<th>Commande</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm start</code></td>
+<td>Lance l'app en développement</td>
+</tr>
+<tr>
+<td><code>npm test</code></td>
+<td>Lance les tests en mode watch</td>
+</tr>
+<tr>
+<td><code>npm run build</code></td>
+<td>Build production</td>
+</tr>
+<tr>
+<td><code>npm run test -- --coverage</code></td>
+<td>Tests avec rapport couverture</td>
+</tr>
+<tr>
+<td><code>npm run eject</code></td>
+<td>Éject configuration (⚠️ non réversible)</td>
+</tr>
+</tbody>
+</table>
+<h2>📚 Documentation Complète</h2>
+<p>Voir <a href="./DOCUMENTATION.md">DOCUMENTATION.md</a> pour :</p>
+<ul>
+<li>Détails de chaque fonction de validation</li>
+<li>Guide de test complet</li>
+<li>Architecture détaillée</li>
+<li>Dépannage</li>
+<li>Cas d'usage</li>
+</ul>
+<h2>🎓 Points d'Apprentissage</h2>
+<p>Ce projet couvre :</p>
+<ul>
+<li>React hooks (useState)</li>
+<li>Testing Library pour tests React</li>
+<li>Jest pour tests unitaires</li>
+<li>Validation de formulaires robuste</li>
+<li>localStorage API</li>
+<li>Gestion d'erreurs</li>
+<li>Patterns de test (AAA : Arrange, Act, Assert)</li>
+</ul>
+<h2>✨ Points Forts</h2>
+<p>✅ <strong>Couverture maximale</strong> : 99.11% de code testé
+✅ <strong>Tests fiables</strong> : 66 tests qui passent constamment
+✅ <strong>Code maintenable</strong> : Architecture modulaire, fonctions pures
+✅ <strong>Validation robuste</strong> : Cas limites couverts
+✅ <strong>UX/UI soignée</strong> : Messages clairs, responsive
+✅ <strong>Documentation complète</strong> : Fichier DOCUMENTATION.md détaillé</p>
+<h2>📞 Dépannage</h2>
+<p><strong>Les tests échouent ?</strong></p>
+<pre class="prettyprint source lang-bash"><code>rm -rf node_modules
+npm install
+npm test
+</code></pre>
+<p><strong>Erreur localStorage ?</strong></p>
+<ul>
+<li>Vérifier console (F12)</li>
+<li>LocalStorage requiert HTTPS en production</li>
+<li>Vérifier paramètres navigateur</li>
+</ul>
+<h2>📄 Licence</h2>
+<p>Projet créé à titre pédagogique pour l'École YNOV.</p>
+<hr>
+<p><strong>Projet finalisé</strong> avec succès ✅</p>
+<ul>
+<li>Toutes les fonctionnalités implémentées</li>
+<li>Tests unitaires et d'intégration complets</li>
+<li>Couverture de test 99.11%</li>
+<li>Documentation exhaustive</li>
+</ul>
+<h3>Analyzing the Bundle Size</h3>
+<p>This section has moved here: <a href="https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size">https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size</a></p>
+<h3>Making a Progressive Web App</h3>
+<p>This section has moved here: <a href="https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app">https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app</a></p>
+<h3>Advanced Configuration</h3>
+<p>This section has moved here: <a href="https://facebook.github.io/create-react-app/docs/advanced-configuration">https://facebook.github.io/create-react-app/docs/advanced-configuration</a></p>
+<h3>Deployment</h3>
+<p>This section has moved here: <a href="https://facebook.github.io/create-react-app/docs/deployment">https://facebook.github.io/create-react-app/docs/deployment</a></p>
+<h3><code>npm run build</code> fails to minify</h3>
+<p>This section has moved here: <a href="https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify">https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify</a></p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#validateCity">validateCity</a></li><li><a href="global.html#validateDateOfBirth">validateDateOfBirth</a></li><li><a href="global.html#validateEmail">validateEmail</a></li><li><a href="global.html#validateForm">validateForm</a></li><li><a href="global.html#validateName">validateName</a></li><li><a href="global.html#validatePostalCode">validatePostalCode</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Feb 18 2026 23:06:46 GMT+0100 (heure normale d’Europe centrale)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

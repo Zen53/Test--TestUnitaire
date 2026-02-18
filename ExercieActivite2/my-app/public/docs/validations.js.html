@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: validations.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: validations.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Validation des données du formulaire d'enregistrement
+ */
+
+/**
+ * Valide le nom ou prénom
+ * @param {string} name - Le nom ou prénom à valider
+ * @returns {object} - { isValid: boolean, error: string }
+ */
+export const validateName = (name) => {
+  if (!name || typeof name !== 'string') {
+    return { isValid: false, error: 'Le nom/prénom est requis' };
+  }
+
+  const trimmedName = name.trim();
+
+  if (trimmedName.length &lt; 2) {
+    return { isValid: false, error: 'Le nom/prénom doit contenir au moins 2 caractères' };
+  }
+
+  if (trimmedName.length > 50) {
+    return { isValid: false, error: 'Le nom/prénom ne doit pas dépasser 50 caractères' };
+  }
+
+  // Vérifie que le nom ne contient que des lettres, espaces et tirets
+  const nameRegex = /^[a-zA-ZÀ-ÿ\s\-']+$/;
+  if (!nameRegex.test(trimmedName)) {
+    return { isValid: false, error: 'Le nom/prénom ne peut contenir que des lettres, espaces et tirets' };
+  }
+
+  return { isValid: true, error: '' };
+};
+
+/**
+ * Valide l'adresse email
+ * @param {string} email - L'email à valider
+ * @returns {object} - { isValid: boolean, error: string }
+ */
+export const validateEmail = (email) => {
+  if (!email || typeof email !== 'string') {
+    return { isValid: false, error: 'L\'email est requis' };
+  }
+
+  const trimmedEmail = email.trim();
+
+  // Regex simple pour validation d'email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(trimmedEmail)) {
+    return { isValid: false, error: 'L\'email est invalide' };
+  }
+
+  if (trimmedEmail.length > 100) {
+    return { isValid: false, error: 'L\'email ne doit pas dépasser 100 caractères' };
+  }
+
+  return { isValid: true, error: '' };
+};
+
+/**
+ * Valide la date de naissance (minimum 18 ans)
+ * @param {string} dateString - La date au format YYYY-MM-DD
+ * @returns {object} - { isValid: boolean, error: string }
+ */
+export const validateDateOfBirth = (dateString) => {
+  if (!dateString || typeof dateString !== 'string') {
+    return { isValid: false, error: 'La date de naissance est requise' };
+  }
+
+  const birthDate = new Date(dateString);
+
+  if (isNaN(birthDate.getTime())) {
+    return { isValid: false, error: 'La date est invalide' };
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (monthDiff &lt; 0 || (monthDiff === 0 &amp;&amp; today.getDate() &lt; birthDate.getDate())) {
+    age--;
+  }
+
+  if (age &lt; 18) {
+    return { isValid: false, error: 'Vous devez avoir au moins 18 ans' };
+  }
+
+  return { isValid: true, error: '' };
+};
+
+/**
+ * Valide le code postal français
+ * @param {string} postalCode - Le code postal à valider
+ * @returns {object} - { isValid: boolean, error: string }
+ */
+export const validatePostalCode = (postalCode) => {
+  if (!postalCode || typeof postalCode !== 'string') {
+    return { isValid: false, error: 'Le code postal est requis' };
+  }
+
+  const trimmedPostalCode = postalCode.trim();
+
+  // Code postal français : 5 chiffres
+  const postalCodeRegex = /^\d{5}$/;
+  if (!postalCodeRegex.test(trimmedPostalCode)) {
+    return { isValid: false, error: 'Le code postal doit contenir 5 chiffres' };
+  }
+
+  return { isValid: true, error: '' };
+};
+
+/**
+ * Valide la ville
+ * @param {string} city - La ville à valider
+ * @returns {object} - { isValid: boolean, error: string }
+ */
+export const validateCity = (city) => {
+  if (!city || typeof city !== 'string') {
+    return { isValid: false, error: 'La ville est requise' };
+  }
+
+  const trimmedCity = city.trim();
+
+  if (trimmedCity.length &lt; 2) {
+    return { isValid: false, error: 'La ville doit contenir au moins 2 caractères' };
+  }
+
+  if (trimmedCity.length > 50) {
+    return { isValid: false, error: 'La ville ne doit pas dépasser 50 caractères' };
+  }
+
+  // Vérifie que la ville ne contient que des lettres, espaces et tirets
+  const cityRegex = /^[a-zA-ZÀ-ÿ\s\-']+$/;
+  if (!cityRegex.test(trimmedCity)) {
+    return { isValid: false, error: 'La ville ne peut contenir que des lettres, espaces et tirets' };
+  }
+
+  return { isValid: true, error: '' };
+};
+
+/**
+ * Valide tous les champs du formulaire
+ * @param {object} formData - Objet contenant tous les champs à valider
+ * @returns {object} - { isValid: boolean, errors: object }
+ */
+export const validateForm = (formData) => {
+  const errors = {};
+
+  const firstNameValidation = validateName(formData.firstName);
+  if (!firstNameValidation.isValid) {
+    errors.firstName = firstNameValidation.error;
+  }
+
+  const lastNameValidation = validateName(formData.lastName);
+  if (!lastNameValidation.isValid) {
+    errors.lastName = lastNameValidation.error;
+  }
+
+  const emailValidation = validateEmail(formData.email);
+  if (!emailValidation.isValid) {
+    errors.email = emailValidation.error;
+  }
+
+  const dateOfBirthValidation = validateDateOfBirth(formData.dateOfBirth);
+  if (!dateOfBirthValidation.isValid) {
+    errors.dateOfBirth = dateOfBirthValidation.error;
+  }
+
+  const postalCodeValidation = validatePostalCode(formData.postalCode);
+  if (!postalCodeValidation.isValid) {
+    errors.postalCode = postalCodeValidation.error;
+  }
+
+  const cityValidation = validateCity(formData.city);
+  if (!cityValidation.isValid) {
+    errors.city = cityValidation.error;
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  };
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#validateCity">validateCity</a></li><li><a href="global.html#validateDateOfBirth">validateDateOfBirth</a></li><li><a href="global.html#validateEmail">validateEmail</a></li><li><a href="global.html#validateForm">validateForm</a></li><li><a href="global.html#validateName">validateName</a></li><li><a href="global.html#validatePostalCode">validatePostalCode</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Feb 18 2026 23:06:46 GMT+0100 (heure normale d’Europe centrale)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

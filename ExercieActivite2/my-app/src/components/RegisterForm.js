@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   validateName,
   validateEmail,
@@ -22,6 +22,13 @@ function RegisterForm() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [userCount, setUserCount] = useState(0);
+
+  // Charger le nombre d'utilisateurs au montage
+  useEffect(() => {
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    setUserCount(users.length);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,6 +68,7 @@ function RegisterForm() {
       };
       existingUsers.push(newUser);
       localStorage.setItem('users', JSON.stringify(existingUsers));
+      setUserCount(existingUsers.length);
 
       // Reset form
       setFormData({
@@ -88,6 +96,9 @@ function RegisterForm() {
   return (
     <div className="register-form-container">
       <h1>Formulaire d'enregistrement</h1>
+      <p className="user-counter" data-testid="user-counter">
+        {userCount} user{userCount !== 1 ? '(s)' : ''} already registered
+      </p>
 
       {successMessage && (
         <div className="success-message" data-testid="success-message">
