@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RegisterForm from './RegisterForm';
+import { UsersProvider } from '../context/UsersContext';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -24,13 +25,21 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });
 
+/** Helper : rend le formulaire enveloppé dans le Provider */
+const renderForm = (props = {}) =>
+  render(
+    <UsersProvider>
+      <RegisterForm {...props} />
+    </UsersProvider>
+  );
+
 describe('RegisterForm Integration Tests', () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
   it('should render the form with all fields', () => {
-    render(<RegisterForm />);
+    renderForm();
     
     expect(screen.getByText('Formulaire d\'enregistrement')).toBeInTheDocument();
     expect(screen.getByLabelText(/Prénom/)).toBeInTheDocument();
@@ -43,7 +52,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should show validation errors when submitting empty form', () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const submitButton = screen.getByRole('button', { name: /S'enregistrer/ });
     fireEvent.click(submitButton);
@@ -57,7 +66,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should show error for invalid email', () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const emailInput = screen.getByTestId('input-email');
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
@@ -70,7 +79,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should show error for invalid postal code', () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const postalCodeInput = screen.getByTestId('input-postalCode');
     fireEvent.change(postalCodeInput, { target: { value: '750' } });
@@ -83,7 +92,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should show error for person under 18', () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const today = new Date();
     const minAge = new Date(today.getFullYear() - 17, today.getMonth(), today.getDate());
@@ -100,7 +109,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should successfully submit valid form and save to localStorage', async () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
@@ -137,7 +146,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should clear form after successful submission', async () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
@@ -171,7 +180,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should save multiple users to localStorage', async () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
@@ -208,7 +217,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should clear error messages when user types in field', () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const firstNameInput = screen.getByTestId('input-firstName');
     const submitButton = screen.getByRole('button', { name: /S'enregistrer/ });
@@ -221,7 +230,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should show error for name with numbers', () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const firstNameInput = screen.getByTestId('input-firstName');
     fireEvent.change(firstNameInput, { target: { value: 'Jean123' } });
@@ -233,7 +242,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should show error for city with special characters', () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const cityInput = screen.getByTestId('input-city');
     fireEvent.change(cityInput, { target: { value: 'Paris@' } });
@@ -245,7 +254,7 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should handle form submission with valid hyphenated names', async () => {
-    render(<RegisterForm />);
+    renderForm();
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
@@ -267,7 +276,7 @@ describe('RegisterForm Integration Tests', () => {
 
   it('should hide success message after 3 seconds', async () => {
     jest.useFakeTimers();
-    render(<RegisterForm />);
+    renderForm();
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());

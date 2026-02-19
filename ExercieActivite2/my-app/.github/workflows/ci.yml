@@ -1,0 +1,82 @@
+name: CI/CD Pipeline – Tests & Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Tests unitaires & d'intégration (Jest) ──
+  unit-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run UT & IT (Jest)
+        run: npm test
+
+  # ── Tests E2E (Cypress headless) ──
+  e2e:
+    runs-on: ubuntu-latest
+    needs: unit-integration
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the app
+        run: npm run build
+
+      - name: Install serve
+        run: npm install -g serve
+
+      - name: Start app & run Cypress
+        run: |
+          serve -s build -l 3000 &
+          npx wait-on http://localhost:3000 --timeout 30000
+          npx cypress run --headless --browser chrome
+
+      - name: Upload Cypress screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+
+      - name: Upload Cypress videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: cypress/videos
+
+  # ── Build de production ──
+  build:
+    runs-on: ubuntu-latest
+    needs: [unit-integration, e2e]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build

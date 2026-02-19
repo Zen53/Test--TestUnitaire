@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   validateName,
   validateEmail,
@@ -7,9 +7,17 @@ import {
   validateCity,
   validateForm,
 } from '../validations';
+import { useUsers } from '../context/UsersContext';
 import './RegisterForm.css';
 
-function RegisterForm() {
+/**
+ * Composant formulaire d'inscription.
+ * Utilise le Context React pour l'état partagé des utilisateurs.
+ * @param {{ onRegistered?: Function }} props - Callback optionnel après inscription réussie
+ */
+function RegisterForm({ onRegistered }) {
+  const { addUser, userCount } = useUsers();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -22,13 +30,6 @@ function RegisterForm() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [userCount, setUserCount] = useState(0);
-
-  // Charger le nombre d'utilisateurs au montage
-  useEffect(() => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    setUserCount(users.length);
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,39 +59,36 @@ function RegisterForm() {
       return;
     }
 
-    // Save to localStorage
-    try {
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      const newUser = {
-        id: Date.now(),
-        ...formData,
-        registeredAt: new Date().toISOString(),
-      };
-      existingUsers.push(newUser);
-      localStorage.setItem('users', JSON.stringify(existingUsers));
-      setUserCount(existingUsers.length);
+    // Ajouter via le contexte (vérifie aussi le doublon email)
+    const result = addUser(formData);
 
-      // Reset form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        dateOfBirth: '',
-        city: '',
-        postalCode: '',
-      });
-      setErrors({});
-      setSubmitted(true);
-      setSuccessMessage('✓ Enregistrement réussi !');
-
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage('');
-        setSubmitted(false);
-      }, 3000);
-    } catch (error) {
-      setErrors({ form: 'Erreur lors de la sauvegarde. Veuillez réessayer.' });
+    if (!result.success) {
+      setErrors({ email: result.error });
+      setSubmitted(false);
+      return;
     }
+
+    // Reset form
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      dateOfBirth: '',
+      city: '',
+      postalCode: '',
+    });
+    setErrors({});
+    setSubmitted(true);
+    setSuccessMessage('✓ Enregistrement réussi !');
+
+    // Redirection ou masquage du message après 2 secondes
+    setTimeout(() => {
+      setSuccessMessage('');
+      setSubmitted(false);
+      if (onRegistered) {
+        onRegistered();
+      }
+    }, 2000);
   };
 
   return (

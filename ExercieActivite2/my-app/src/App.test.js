@@ -1,8 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders the register form', () => {
+test('renders the home page with navigation', () => {
   render(<App />);
-  const formTitle = screen.getByText(/Formulaire d'enregistrement/i);
-  expect(formTitle).toBeInTheDocument();
+  const heading = screen.getByText(/Bienvenue/i);
+  expect(heading).toBeInTheDocument();
+});
+
+test('renders navigation links', () => {
+  render(<App />);
+  expect(screen.getByTestId('nav-home')).toBeInTheDocument();
+  expect(screen.getByTestId('nav-register')).toBeInTheDocument();
 });
