@@ -3,6 +3,13 @@ import userEvent from '@testing-library/user-event';
 import RegisterForm from './RegisterForm';
 import { UsersProvider } from '../context/UsersContext';
 
+// Mock API calls
+jest.mock('../api/api', () => ({
+  fetchUsers: jest.fn().mockResolvedValue([]),
+  createUser: jest.fn(),
+  deleteUser: jest.fn(),
+}));
+
 // Mock localStorage
 const localStorageMock = (() => {
   let store = {};
@@ -10,7 +17,11 @@ const localStorageMock = (() => {
   return {
     getItem: (key) => store[key] || null,
     setItem: (key, value) => {
-      store[key] = value.toString();
+      if (typeof value !== 'string') {
+        store[key] = String(value);
+      } else {
+        store[key] = value;
+      }
     },
     removeItem: (key) => {
       delete store[key];
@@ -36,10 +47,16 @@ const renderForm = (props = {}) =>
 describe('RegisterForm Integration Tests', () => {
   beforeEach(() => {
     localStorage.clear();
+    jest.clearAllMocks();
   });
 
-  it('should render the form with all fields', () => {
+  it('should render the form with all fields', async () => {
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     expect(screen.getByText('Formulaire d\'enregistrement')).toBeInTheDocument();
     expect(screen.getByLabelText(/Prénom/)).toBeInTheDocument();
@@ -51,8 +68,13 @@ describe('RegisterForm Integration Tests', () => {
     expect(screen.getByRole('button', { name: /S'enregistrer/ })).toBeInTheDocument();
   });
 
-  it('should show validation errors when submitting empty form', () => {
+  it('should show validation errors when submitting empty form', async () => {
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const submitButton = screen.getByRole('button', { name: /S'enregistrer/ });
     fireEvent.click(submitButton);
@@ -65,8 +87,13 @@ describe('RegisterForm Integration Tests', () => {
     expect(screen.getByTestId('error-postalCode')).toBeInTheDocument();
   });
 
-  it('should show error for invalid email', () => {
+  it('should show error for invalid email', async () => {
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const emailInput = screen.getByTestId('input-email');
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
@@ -78,8 +105,13 @@ describe('RegisterForm Integration Tests', () => {
     expect(screen.getByTestId('error-email')).toHaveTextContent('invalide');
   });
 
-  it('should show error for invalid postal code', () => {
+  it('should show error for invalid postal code', async () => {
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const postalCodeInput = screen.getByTestId('input-postalCode');
     fireEvent.change(postalCodeInput, { target: { value: '750' } });
@@ -91,8 +123,13 @@ describe('RegisterForm Integration Tests', () => {
     expect(screen.getByTestId('error-postalCode')).toHaveTextContent('5 chiffres');
   });
 
-  it('should show error for person under 18', () => {
+  it('should show error for person under 18', async () => {
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const today = new Date();
     const minAge = new Date(today.getFullYear() - 17, today.getMonth(), today.getDate());
@@ -108,8 +145,25 @@ describe('RegisterForm Integration Tests', () => {
     expect(screen.getByTestId('error-dateOfBirth')).toHaveTextContent('18 ans');
   });
 
-  it('should successfully submit valid form and save to localStorage', async () => {
+  it('should successfully submit valid form and call API', async () => {
+    const { createUser } = require('../api/api');
+    createUser.mockResolvedValue({
+      id: 1,
+      firstName: 'Jean',
+      lastName: 'Dupont',
+      email: 'jean.dupont@example.com',
+      dateOfBirth: '1999-01-01',
+      city: 'Paris',
+      postalCode: '75001',
+      registeredAt: new Date().toISOString(),
+    });
+
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
@@ -136,13 +190,15 @@ describe('RegisterForm Integration Tests', () => {
       expect(screen.getByTestId('success-message')).toBeInTheDocument();
     });
 
-    const users = JSON.parse(localStorage.getItem('users'));
-    expect(users).toHaveLength(1);
-    expect(users[0].firstName).toBe('Jean');
-    expect(users[0].lastName).toBe('Dupont');
-    expect(users[0].email).toBe('jean.dupont@example.com');
-    expect(users[0].city).toBe('Paris');
-    expect(users[0].postalCode).toBe('75001');
+    // Vérifier que createUser a été appelé avec les données correctes
+    expect(createUser).toHaveBeenCalledWith({
+      firstName: 'Jean',
+      lastName: 'Dupont',
+      email: 'jean.dupont@example.com',
+      dateOfBirth: dateString,
+      city: 'Paris',
+      postalCode: '75001',
+    });
   });
 
   it('should clear form after successful submission', async () => {

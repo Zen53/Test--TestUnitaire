@@ -1,15 +1,15 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { fetchUsers, createUser as apiCreateUser } from '../api/api';
 
 /**
  * Contexte React pour la gestion d'état partagé des utilisateurs.
- * Permet à tous les composants (Accueil, Formulaire) de partager
- * la même source de vérité pour la liste des inscrits.
+ * Utilise l'API backend pour la persistance.
  */
 const UsersContext = createContext();
 
 /**
  * Hook personnalisé pour accéder au contexte des utilisateurs.
- * @returns {{ users: Array, addUser: Function, userCount: number }}
+ * @returns {{ users: Array, addUser: Function, userCount: number, isLoading: boolean, error: string }}
  */
 export const useUsers = () => {
   const context = useContext(UsersContext);
@@ -21,53 +21,76 @@ export const useUsers = () => {
 
 /**
  * Provider qui centralise l'état des utilisateurs.
- * Charge les utilisateurs depuis localStorage au montage,
- * et les synchronise à chaque ajout.
+ * Charge les utilisateurs depuis l'API au montage.
  *
  * @param {{ children: React.ReactNode }} props
  */
 export const UsersProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Charger les utilisateurs depuis localStorage au montage
+  // Charger les utilisateurs depuis l'API au montage
   useEffect(() => {
-    const stored = localStorage.getItem('users');
-    if (stored) {
+    const loadUsers = async () => {
       try {
-        setUsers(JSON.parse(stored));
-      } catch {
-        setUsers([]);
+        setIsLoading(true);
+        setError(null);
+        const data = await fetchUsers();
+        setUsers(data);
+        // Synchroniser avec localStorage pour fallback offline
+        localStorage.setItem('users', JSON.stringify(data));
+      } catch (err) {
+        console.error('Erreur lors du chargement des utilisateurs:', err);
+        // Fallback : charger depuis localStorage si l'API échoue
+        const fallback = localStorage.getItem('users');
+        if (fallback) {
+          try {
+            setUsers(JSON.parse(fallback));
+          } catch {
+            setUsers([]);
+          }
+        }
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    loadUsers();
   }, []);
 
   /**
-   * Ajoute un utilisateur. Vérifie le doublon d'email.
+   * Ajoute un utilisateur. Appelle l'API et met à jour l'état local.
    * @param {object} userData - Données du formulaire
    * @returns {{ success: boolean, error?: string }}
    */
-  const addUser = (userData) => {
-    // Vérifier doublon email
-    const emailExists = users.some(
-      (u) => u.email.toLowerCase() === userData.email.trim().toLowerCase()
-    );
-    if (emailExists) {
-      return { success: false, error: 'Cet email est déjà utilisé par un autre inscrit' };
+  const addUser = async (userData) => {
+    try {
+      setError(null);
+      const newUser = await apiCreateUser(userData);
+      const updated = [...users, newUser];
+      setUsers(updated);
+      // Synchroniser localStorage
+      localStorage.setItem('users', JSON.stringify(updated));
+      return { success: true };
+    } catch (err) {
+      const errorMessage = err.message || 'Erreur lors de l\'ajout de l\'utilisateur';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     }
-
-    const newUser = {
-      id: Date.now(),
-      ...userData,
-      registeredAt: new Date().toISOString(),
-    };
-    const updated = [...users, newUser];
-    setUsers(updated);
-    localStorage.setItem('users', JSON.stringify(updated));
-    return { success: true };
   };
 
   return (
-    <UsersContext.Provider value={{ users, addUser, userCount: users.length }}>
+    <UsersContext.Provider
+      value={{
+        users,
+        addUser,
+        userCount: users.length,
+        isLoading,
+        error,
+      }}
+    >
       {children}
     </UsersContext.Provider>
   );

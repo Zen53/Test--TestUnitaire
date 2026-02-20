@@ -30,6 +30,7 @@ function RegisterForm({ onRegistered }) {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,7 +47,7 @@ function RegisterForm({ onRegistered }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMessage('');
 
@@ -59,36 +60,44 @@ function RegisterForm({ onRegistered }) {
       return;
     }
 
-    // Ajouter via le contexte (vérifie aussi le doublon email)
-    const result = addUser(formData);
+    // Ajouter via le contexte (appel asynchrone API)
+    try {
+      setIsLoading(true);
+      const result = await addUser(formData);
 
-    if (!result.success) {
-      setErrors({ email: result.error });
-      setSubmitted(false);
-      return;
-    }
-
-    // Reset form
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      dateOfBirth: '',
-      city: '',
-      postalCode: '',
-    });
-    setErrors({});
-    setSubmitted(true);
-    setSuccessMessage('✓ Enregistrement réussi !');
-
-    // Redirection ou masquage du message après 2 secondes
-    setTimeout(() => {
-      setSuccessMessage('');
-      setSubmitted(false);
-      if (onRegistered) {
-        onRegistered();
+      if (!result.success) {
+        setErrors({ email: result.error });
+        setSubmitted(false);
+        return;
       }
-    }, 2000);
+
+      // Reset form
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        dateOfBirth: '',
+        city: '',
+        postalCode: '',
+      });
+      setErrors({});
+      setSubmitted(true);
+      setSuccessMessage('✓ Enregistrement réussi !');
+
+      // Redirection ou masquage du message après 2 secondes
+      setTimeout(() => {
+        setSuccessMessage('');
+        setSubmitted(false);
+        if (onRegistered) {
+          onRegistered();
+        }
+      }, 2000);
+    } catch (err) {
+      setErrors({ form: `Erreur serveur: ${err.message}` });
+      setSubmitted(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -226,8 +235,13 @@ function RegisterForm({ onRegistered }) {
         </div>
 
         {/* Submit Button */}
-        <button type="submit" className="submit-btn" data-testid="submit-button">
-          S'enregistrer
+        <button 
+          type="submit" 
+          className="submit-btn" 
+          data-testid="submit-button"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Chargement...' : 'S\'enregistrer'}
         </button>
       </form>
     </div>

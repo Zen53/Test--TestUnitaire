@@ -9,7 +9,27 @@ import './HomePage.css';
  * et la liste des utilisateurs (Nom + Prénom).
  */
 function HomePage() {
-  const { users, userCount } = useUsers();
+  const { users, userCount, isLoading, error } = useUsers();
+
+  if (isLoading) {
+    return (
+      <div className="home-container">
+        <h1>Bienvenue sur notre plateforme</h1>
+        <p data-testid="loading-message">Chargement des utilisateurs...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="home-container">
+        <h1>Bienvenue sur notre plateforme</h1>
+        <div className="error-message" data-testid="error-message">
+          Erreur lors du chargement: {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="home-container">
