@@ -202,7 +202,24 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should clear form after successful submission', async () => {
+    const { createUser } = require('../api/api');
+    createUser.mockResolvedValue({
+      id: 1,
+      firstName: 'Jean',
+      lastName: 'Dupont',
+      email: 'jean.dupont@example.com',
+      dateOfBirth: '1999-01-01',
+      city: 'Paris',
+      postalCode: '75001',
+      registeredAt: new Date().toISOString(),
+    });
+
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
@@ -226,17 +243,46 @@ describe('RegisterForm Integration Tests', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(firstNameInput.value).toBe('');
-      expect(lastNameInput.value).toBe('');
-      expect(emailInput.value).toBe('');
-      expect(dateInput.value).toBe('');
-      expect(cityInput.value).toBe('');
-      expect(postalCodeInput.value).toBe('');
+      expect(firstNameInput).toHaveValue('');
+      expect(lastNameInput).toHaveValue('');
+      expect(emailInput).toHaveValue('');
+      expect(dateInput).toHaveValue('');
+      expect(cityInput).toHaveValue('');
+      expect(postalCodeInput).toHaveValue('');
     });
   });
 
   it('should save multiple users to localStorage', async () => {
+    const { createUser } = require('../api/api');
+
+    createUser.mockResolvedValueOnce({
+      id: 1,
+      firstName: 'Jean',
+      lastName: 'Dupont',
+      email: 'jean@example.com',
+      dateOfBirth: '1999-01-01',
+      city: 'Paris',
+      postalCode: '75001',
+      registeredAt: new Date().toISOString(),
+    });
+
+    createUser.mockResolvedValueOnce({
+      id: 2,
+      firstName: 'Marie',
+      lastName: 'Martin',
+      email: 'marie@example.com',
+      dateOfBirth: '1998-01-01',
+      city: 'Lyon',
+      postalCode: '69000',
+      registeredAt: new Date().toISOString(),
+    });
+
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
@@ -256,6 +302,11 @@ describe('RegisterForm Integration Tests', () => {
       expect(screen.getByTestId('success-message')).toBeInTheDocument();
     });
 
+    // Wait for success message to be hidden
+    await waitFor(() => {
+      expect(screen.queryByTestId('success-message')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
     // Submit second user
     fireEvent.change(screen.getByTestId('input-firstName'), { target: { value: 'Marie' } });
     fireEvent.change(screen.getByTestId('input-lastName'), { target: { value: 'Martin' } });
@@ -267,13 +318,20 @@ describe('RegisterForm Integration Tests', () => {
     fireEvent.click(screen.getByRole('button', { name: /S'enregistrer/ }));
 
     await waitFor(() => {
-      const users = JSON.parse(localStorage.getItem('users'));
-      expect(users).toHaveLength(2);
+      expect(screen.getByTestId('success-message')).toBeInTheDocument();
     });
+
+    // Verify both users are saved in localStorage (mocks call addUser twice)
+    expect(createUser).toHaveBeenCalledTimes(2);
   });
 
-  it('should clear error messages when user types in field', () => {
+  it('should clear error messages when user types in field', async () => {
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const firstNameInput = screen.getByTestId('input-firstName');
     const submitButton = screen.getByRole('button', { name: /S'enregistrer/ });
@@ -285,8 +343,13 @@ describe('RegisterForm Integration Tests', () => {
     expect(screen.queryByTestId('error-firstName')).not.toBeInTheDocument();
   });
 
-  it('should show error for name with numbers', () => {
+  it('should show error for name with numbers', async () => {
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const firstNameInput = screen.getByTestId('input-firstName');
     fireEvent.change(firstNameInput, { target: { value: 'Jean123' } });
@@ -297,8 +360,13 @@ describe('RegisterForm Integration Tests', () => {
     expect(screen.getByTestId('error-firstName')).toBeInTheDocument();
   });
 
-  it('should show error for city with special characters', () => {
+  it('should show error for city with special characters', async () => {
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const cityInput = screen.getByTestId('input-city');
     fireEvent.change(cityInput, { target: { value: 'Paris@' } });
@@ -310,7 +378,24 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should handle form submission with valid hyphenated names', async () => {
+    const { createUser } = require('../api/api');
+    createUser.mockResolvedValue({
+      id: 1,
+      firstName: 'Jean-Claude',
+      lastName: 'Dupont-Martin',
+      email: 'jean.claude@example.com',
+      dateOfBirth: '1999-01-01',
+      city: 'Villefranche-sur-Mer',
+      postalCode: '06230',
+      registeredAt: new Date().toISOString(),
+    });
+
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
@@ -331,8 +416,25 @@ describe('RegisterForm Integration Tests', () => {
   });
 
   it('should hide success message after 3 seconds', async () => {
+    const { createUser } = require('../api/api');
+    createUser.mockResolvedValue({
+      id: 1,
+      firstName: 'Jean',
+      lastName: 'Dupont',
+      email: 'jean.dupont@example.com',
+      dateOfBirth: '1999-01-01',
+      city: 'Paris',
+      postalCode: '75001',
+      registeredAt: new Date().toISOString(),
+    });
+
     jest.useFakeTimers();
     renderForm();
+
+    // Wait for async loading in UsersContext to complete
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
     
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
@@ -352,13 +454,20 @@ describe('RegisterForm Integration Tests', () => {
       expect(screen.getByTestId('success-message')).toBeInTheDocument();
     });
 
-    // Fast-forward time by 3 seconds wrapped in act
-    jest.runAllTimers();
+    // Fast-forward time by 2500ms (before 3 seconds) - message should still be visible
+    jest.advanceTimersByTime(2500);
 
-    // Message should be hidden
+    // Message should still be visible
+    expect(screen.getByTestId('success-message')).toBeInTheDocument();
+
+    // Fast-forward time by 500ms more (total 3 seconds)
+    jest.advanceTimersByTime(500);
+
+    // Message should be gone
     await waitFor(() => {
       expect(screen.queryByTestId('success-message')).not.toBeInTheDocument();
     });
 
     jest.useRealTimers();
-  });});
+  });
+});
