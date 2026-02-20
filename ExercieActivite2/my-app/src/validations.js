@@ -68,15 +68,19 @@ export const validateDateOfBirth = (dateString) => {
 
   const birthDate = new Date(dateString);
 
-  if (isNaN(birthDate.getTime())) {
+  // Corriger le parsing UTC : utiliser les composantes locales pour éviter le décalage
+  const [yearStr, monthStr, dayStr] = dateString.split('-');
+  const birthLocal = new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr));
+
+  if (isNaN(birthLocal.getTime())) {
     return { isValid: false, error: 'La date est invalide' };
   }
 
   const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
+  let age = today.getFullYear() - birthLocal.getFullYear();
+  const monthDiff = today.getMonth() - birthLocal.getMonth();
 
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthLocal.getDate())) {
     age--;
   }
 

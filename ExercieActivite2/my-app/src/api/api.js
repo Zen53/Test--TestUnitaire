@@ -2,8 +2,12 @@
  * api.js – Couche d'appels API
  *
  * Centralise tous les appels HTTP vers l'API backend.
- * Utilise axios pour les requêtes.
- * Facilite le mocking dans les tests.
+ * Utilise axios pour les requêtes avec jest.mock('axios') pour les tests.
+ *
+ * Gestion des erreurs HTTP :
+ *   - 400 : Erreur métier (email dupliqué, données invalides)
+ *   - 500 : Crash serveur (indisponible)
+ *   - Réseau : Erreur de connexion
  *
  * API utilisée : JSONPlaceholder (https://jsonplaceholder.typicode.com)
  * ⚠️  Pour production : remplacer par votre backend réel
@@ -30,10 +34,18 @@ const getApiClient = () => {
 };
 
 /**
+ * Réinitialise le client axios (utilisé dans les tests).
+ * Permet de recréer l'instance avec un nouveau mock entre chaque test.
+ */
+export const _resetApiClient = () => {
+  apiClient = null;
+};
+
+/**
  * Récupère la liste des utilisateurs depuis l'API.
  *
  * @returns {Promise<Array>} Tableau des utilisateurs
- * @throws {Error} Si la requête échoue
+ * @throws {Error} Erreur avec propriété `status` pour le code HTTP
  */
 export const fetchUsers = async () => {
   try {
@@ -42,7 +54,7 @@ export const fetchUsers = async () => {
     return response.data.map((user) => ({
       id: user.id,
       firstName: user.name.split(' ')[0],
-      lastName: user.name.split(' ')[1] || '',
+      lastName: user.name.split(' ').slice(1).join(' ') || '',
       email: user.email,
       dateOfBirth: '2001-01-01', // JSONPlaceholder ne fournit pas ce champ
       city: user.address?.city || '',
@@ -50,30 +62,27 @@ export const fetchUsers = async () => {
       registeredAt: new Date().toISOString(),
     }));
   } catch (error) {
-    console.error('Erreur lors de la récupération des utilisateurs:', error);
-    throw new Error(`Impossible de récupérer les utilisateurs: ${error.message}`);
+    if (error.response && error.response.status >= 500) {
+      const err = new Error('Le serveur est temporairement indisponible. Veuillez réessayer plus tard.');
+      err.status = error.response.status;
+      throw err;
+    }
+    const err = new Error(`Impossible de récupérer les utilisateurs: ${error.message}`);
+    err.status = error.response?.status || 0;
+    throw err;
   }
 };
 
 /**
  * Ajoute un nouvel utilisateur via l'API.
+ * La vérification d'unicité de l'email est déléguée au serveur (architecture découplée).
  *
  * @param {Object} userData - Données de l'utilisateur
  * @returns {Promise<Object>} L'utilisateur créé avec ID
- * @throws {Error} Si l'email existe déjà ou la requête échoue
+ * @throws {Error} Erreur avec propriété `status` (400 = email dupliqué, 500 = crash serveur)
  */
 export const createUser = async (userData) => {
   try {
-    // Vérifier si l'email existe déjà (à faire côté serveur en production)
-    const existingUsers = await fetchUsers();
-    const emailExists = existingUsers.some(
-      (u) => u.email.toLowerCase() === userData.email.toLowerCase()
-    );
-
-    if (emailExists) {
-      throw new Error('Cet email est déjà utilisé');
-    }
-
     // Préparer les données au format JSONPlaceholder
     const payload = {
       name: `${userData.firstName} ${userData.lastName}`,
@@ -98,8 +107,24 @@ export const createUser = async (userData) => {
       registeredAt: new Date().toISOString(),
     };
   } catch (error) {
-    console.error('Erreur lors de la création de l\'utilisateur:', error);
-    throw new Error(`Impossible de créer l'utilisateur: ${error.message}`);
+    if (error.response) {
+      const status = error.response.status;
+      if (status === 400) {
+        // Erreur métier : email déjà utilisé, données invalides, etc.
+        const err = new Error(error.response.data?.message || 'Les données envoyées sont invalides.');
+        err.status = 400;
+        throw err;
+      }
+      if (status >= 500) {
+        // Crash serveur
+        const err = new Error('Le serveur est temporairement indisponible. Veuillez réessayer plus tard.');
+        err.status = status;
+        throw err;
+      }
+    }
+    const err = new Error(`Impossible de créer l'utilisateur: ${error.message}`);
+    err.status = error.response?.status || 0;
+    throw err;
   }
 };
 
@@ -108,14 +133,20 @@ export const createUser = async (userData) => {
  *
  * @param {number} userId - ID de l'utilisateur
  * @returns {Promise<void>}
- * @throws {Error} Si la suppression échoue
+ * @throws {Error} Erreur avec propriété `status` pour le code HTTP
  */
 export const deleteUser = async (userId) => {
   try {
     await getApiClient().delete(`/users/${userId}`);
   } catch (error) {
-    console.error(`Erreur lors de la suppression de l'utilisateur ${userId}:`, error);
-    throw new Error(`Impossible de supprimer l'utilisateur: ${error.message}`);
+    if (error.response && error.response.status >= 500) {
+      const err = new Error('Le serveur est temporairement indisponible.');
+      err.status = error.response.status;
+      throw err;
+    }
+    const err = new Error(`Impossible de supprimer l'utilisateur: ${error.message}`);
+    err.status = error.response?.status || 0;
+    throw err;
   }
 };
 

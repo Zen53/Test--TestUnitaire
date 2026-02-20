@@ -1,18 +1,21 @@
 # Formulaire d'Enregistrement React
 
-Une application React robuste avec un formulaire d'enregistrement complet, validations côté client, et gestion du stockage localStorage. Ce projet démontre les meilleures pratiques en React testing avec une couverture de test de **99.11%**.
+Une application React robuste avec un formulaire d'enregistrement complet, validations côté client, intégration API via Axios, et isolation des tests par mocking réseau. Ce projet démontre les meilleures pratiques en React testing avec **82 tests Jest** et des **tests E2E Cypress avec `cy.intercept`**.
 
 ## 🎯 Objectifs du Projet
 
 Ce projet met en pratique :
-- ✅ Développement React avec hooks (useState, useEffect)
+- ✅ Développement React avec hooks (useState, useEffect, useContext)
 - ✅ Validations côté client exhaustives
-- ✅ Gestion d'état et localStorage
-- ✅ Tests unitaires avec Jest/React Testing Library
-- ✅ Tests d'intégration complets
-- ✅ Tests E2E avec Cypress
+- ✅ Intégration API avec Axios (JSONPlaceholder)
+- ✅ Architecture découplée front-end / back-end
+- ✅ Mocking réseau avec `jest.mock('axios')` et `cy.intercept`
+- ✅ Gestion des erreurs HTTP (200, 400, 500)
+- ✅ Tests unitaires, d'intégration et E2E
+- ✅ Context API pour la gestion d'état partagé
+- ✅ Navigation SPA avec React Router v6
+- ✅ Pipeline CI/CD GitHub Actions
 - ✅ Génération de documentation JSDoc
-- ✅ Architecture modulaire et maintenable
 
 ## 🚀 Démarrage Rapide
 
@@ -50,120 +53,201 @@ npm run build
   - ✅ Code postal : Format français exact (5 chiffres)
   - ✅ Ville : 2-50 caractères, support accents et tirets
 
-### Gestion des Données
-- 💾 Sauvegarde persisted dans localStorage
-- 📦 Support de multiples utilisateurs
-- � Compteur utilisateur en temps réel
-- �🔍 Chaque enregistrement inclut ID unique et timestamp
+### Intégration API (Axios + JSONPlaceholder)
+- 🌐 `fetchUsers()` – GET /users avec transformation des données
+- 📝 `createUser()` – POST /users avec payload adapté
+- 🗑️ `deleteUser()` – DELETE /users/:id
+- ⚡ Client axios lazy-init (singleton) pour faciliter le mocking
+- 🔄 Fallback localStorage si l'API est indisponible
+
+### Gestion des Erreurs HTTP
+- ✅ **200/201** : Succès nominal (création, lecture)
+- ❌ **400** : Erreur métier (email déjà utilisé) → message sur le champ email
+- ❌ **500** : Crash serveur → alerte globale, l'app ne plante pas
+- 🔌 **Réseau** : Erreur de connexion gérée gracieusement
+
+### Navigation SPA (React Router v6)
+- 🏠 Page d'accueil : compteur d'inscrits + table des utilisateurs
+- 📝 Page d'inscription : formulaire avec validation et soumission API
+- 🔗 Navigation avec redirection automatique après inscription
 
 ### UX/UI
 - 📝 Messages d'erreur spécifiques par champ
-- ✨ Message de succès avec fermeture auto (3s)
+- 🚨 Alerte serveur globale (erreur 500) via `data-testid="error-form"`
+- ✨ Message de succès avec fermeture auto (2s)
+- ⏳ État de chargement (loading) pendant les appels API
 - 🔄 Nettoyage des erreurs lors de la saisie
 - 🔁 Réinitialisation du formulaire après succès
 
 ## 📊 Couverture de Test
 
-**Total : 79 tests**
-```
-✅ Tests Unitaires : 51 tests (validations.test.js)
-✅ Tests d'Intégration : 15 tests (RegisterForm.test.js + App.test.js)
-✅ Tests E2E Cypress : 13 tests
-   - Validation formulaire: 9 tests (register-form.cy.js)
-   - Compteur utilisateur: 4 tests (user-counter.cy.js)
-
-Couverture de code métier: 99.11%
-Métriques détaillées:
-- Statements: 99.11%
-- Branches: 98.76%
-- Functions: 100%
-- Lines: 99.09%
-```
-
-### Résultats des Tests
+**Total : 82 tests Jest + tests E2E Cypress**
 
 ```
-Test Suites: 3 passed, 3 total ✅
-Tests: 66 passed, 66 total ✅
-Snapshots: 0 total
-Time: ~5s
-Cypress E2E: 13 tests additional ✅
+✅ Tests Unitaires    : 54 tests (validations.test.js)
+✅ Tests API          : 14 tests (api.test.js) – jest.mock('axios')
+✅ Tests d'Intégration: 15 tests (RegisterForm.test.js) – dont 400/500
+✅ Tests App          :  2 tests (App.test.js)
+✅ Tests E2E Cypress  : 14 tests
+   - Navigation API mocking  : 3 tests (navigation.cy.js) – cy.intercept
+   - Validation formulaire   : 8 tests (register-form.cy.js) – cy.intercept
+   - Compteur utilisateur    : 3 tests (user-counter.cy.js) – cy.intercept
+```
+
+### Résultats des Tests Jest
+
+```
+Test Suites: 4 passed, 4 total ✅
+Tests:       82 passed, 82 total ✅
+Snapshots:   0 total
+Time:        ~7s
 ```
 
 ## 📁 Structure du Projet
 
 ```
 src/
-├── validations.js              # Logique de validation pure (100%)
-├── validations.test.js         # 51 tests unitaires
-├── App.js                      # Composant principal (100%)
-├── App.test.js                 # Test du composant App
+├── validations.js              # Logique de validation pure
+├── validations.test.js         # 54 tests unitaires
+├── App.js                      # Routeur SPA + Provider
+├── App.test.js                 # Tests avec mock API
 ├── App.css
+├── api/
+│   ├── api.js                  # Couche HTTP Axios (fetchUsers, createUser, deleteUser)
+│   └── api.test.js             # 14 tests avec jest.mock('axios') – 200/400/500
+├── context/
+│   └── UsersContext.js          # Context API (state partagé, appels async)
+├── pages/
+│   └── HomePage.js              # Page accueil (compteur, table, loading/error)
 ├── components/
-│   ├── RegisterForm.js         # Composant formulaire avec compteur (96.96%)
-│   ├── RegisterForm.test.js    # 15 tests d'intégration
+│   ├── RegisterForm.js          # Formulaire avec soumission API async
+│   ├── RegisterForm.test.js     # 15 tests d'intégration (dont 400/500)
 │   └── RegisterForm.css
-├── DOCUMENTATION.md            # Documentation complète
 └── index.js
 
 cypress/
 ├── e2e/
-│   ├── register-form.cy.js     # 9 tests E2E validation formulaire
-│   └── user-counter.cy.js      # 4 tests E2E compteur utilisateur
+│   ├── navigation.cy.js        # 3 tests – Nominal 201, Erreur 400, Crash 500
+│   ├── register-form.cy.js     # 8 tests – Formulaire avec cy.intercept
+│   └── user-counter.cy.js      # 3 tests – Compteur avec cy.intercept
 ├── support/
-│   └── e2e.js                  # Configuration support Cypress
-└── cypress.config.js           # Configuration Cypress
+│   └── e2e.js
 
-Racine du projet/
-├── README.md                   # Ce fichier
-├── DOCUMENTATION.md            # Détails techniques complets
-├── CYPRESS_GUIDE.md            # Guide des tests E2E
-├── RESUME_PROJET.md            # Résumé exécutif
-├── package.json                # Dépendances et scripts
-├── cypress.config.js           # Config Cypress
-├── jsdoc.config.json           # Config JSDoc
-└── babel.config.js             # Config Babel
+.github/
+└── workflows/
+    └── ci.yml                   # Pipeline CI/CD (3 jobs + REACT_APP_API_URL)
+
+.jest/
+└── setEnvVars.js               # Variables d'environnement pour tests
 ```
 
-## 🔄 Compteur Utilisateur
+## 🧪 Architecture de Mocking
 
-Le formulaire affiche en temps réel combien d'utilisateurs se sont enregistrés :
+### Jest – `jest.mock('axios')`
+
+Les tests d'intégration API utilisent le mocking d'axios au niveau module :
+
 ```javascript
-// Chargement au montage du composant
-useEffect(() => {
-  const users = JSON.parse(localStorage.getItem('users') || '[]');
-  setUserCount(users.length);
-}, []);
+jest.mock('axios');
 
-// Incrémentation après chaque enregistrement réussi
-setUserCount(existingUsers.length);
+import axios from 'axios';
+import { fetchUsers, createUser, _resetApiClient } from './api';
 
-// Affichage avec grammaire correcte
-<p className="user-counter">
-  {userCount} user{userCount !== 1 ? '(s)' : ''} already registered
-</p>
+beforeEach(() => {
+  _resetApiClient(); // Réinitialise le singleton entre chaque test
+  axios.create.mockReturnValue({
+    get: mockGet,
+    post: mockPost,
+    delete: mockDelete,
+  });
+});
 ```
+
+**Scénarios testés :**
+| Scénario | Code HTTP | Test |
+|----------|-----------|------|
+| Succès lecture | 200 | Transformation données JSONPlaceholder |
+| Succès création | 201 | Retour données complètes + ID |
+| Email dupliqué | 400 | Message spécifique du serveur |
+| Serveur down | 500 | Message "indisponible", pas de crash |
+| Réseau coupé | — | Gestion gracieuse de l'erreur |
+
+### Cypress – `cy.intercept`
+
+Les tests E2E utilisent `cy.intercept` pour isoler le frontend :
+
+```javascript
+// Intercepter GET /users → liste mockée
+cy.intercept('GET', '**/users', []).as('getUsers');
+
+// Intercepter POST /users → succès 201
+cy.intercept('POST', '**/users', {
+  statusCode: 201,
+  body: { id: 11 },
+}).as('createUser');
+
+// Intercepter POST /users → erreur 400
+cy.intercept('POST', '**/users', {
+  statusCode: 400,
+  body: { message: 'Cet email est déjà utilisé' },
+}).as('createUser400');
+
+// Intercepter POST /users → crash 500
+cy.intercept('POST', '**/users', {
+  statusCode: 500,
+  body: { message: 'Internal Server Error' },
+}).as('createUser500');
+```
+
+## 🔄 Context API et Gestion d'État
+
+```javascript
+// UsersContext fournit l'état partagé à toute l'app
+const { users, addUser, userCount, isLoading, error } = useUsers();
+
+// addUser retourne { success, error, status } pour distinguer 400 vs 500
+const result = await addUser(formData);
+if (!result.success) {
+  if (result.status >= 500) {
+    // Alerte serveur globale
+  } else {
+    // Erreur métier sur le champ email
+  }
+}
+```
+
+## 🔗 Pipeline CI/CD
+
+Le fichier `.github/workflows/ci.yml` définit 3 jobs :
+
+```yaml
+jobs:
+  unit-integration:   # npm test (Jest 82 tests)
+  e2e:                # npm run build → serve → cypress run
+  build:              # npm run build (production)
+```
+
+Chaque job configure `REACT_APP_API_URL: https://jsonplaceholder.typicode.com`.
 
 ## 🎯 Tests E2E avec Cypress
 
-Tests end-to-end simulant le comportement d'un utilisateur réel.
+### Navigation avec mocking API (3 tests)
+- ✅ **Nominal 201** : Accueil → Inscription → API POST 201 → Redirection → Vérification compteur
+- ❌ **Erreur 400** : Email dupliqué → API POST 400 → Erreur affichée, compteur inchangé
+- ❌ **Crash 500** : Serveur down → API POST 500 → Alerte globale, app reste fonctionnelle
 
-### Tests de Validation Formulaire (9 tests)
+### Validation Formulaire (8 tests)
 - ✅ Charge le formulaire correctement
-- ✅ Affiche les erreurs de validation
-- ✅ Refuse les données invalides
-- ✅ Accepte les noms avec tirets (Jean-Claude)
+- ✅ Affiche les erreurs de validation (formulaire vide)
 - ✅ Enregistrement réussi avec données valides
+- ✅ Refuse les données invalides (email, code postal, âge)
+- ✅ Accepte les noms avec tirets (Jean-Claude)
 - ✅ Nettoyage du formulaire après succès
-- ✅ Message de succès avec disparition auto
-- ✅ Caractères spéciaux et espaces gérés
-- ✅ Support des accents
 
-### Tests Compteur Utilisateur (4 tests)
-- ✅ Compteur à 0 initial
-- ✅ Incrémentation après enregistrement
-- ✅ Incrémentations multiples successives
-- ✅ Persistance du compteur après rechargement
+### Compteur Utilisateur (3 tests)
+- ✅ Compteur à 0 initial (API retourne liste vide)
+- ✅ Incrémentation après enregistrement via API
+- ✅ Affichage correct avec utilisateurs pré-existants
 
 ### Exécution des Tests E2E
 
@@ -175,11 +259,10 @@ npm run cypress
 npx cypress run
 
 # Tests spécifiques
+npx cypress run --spec "cypress/e2e/navigation.cy.js"
 npx cypress run --spec "cypress/e2e/register-form.cy.js"
 npx cypress run --spec "cypress/e2e/user-counter.cy.js"
 ```
-
-Voir [CYPRESS_GUIDE.md](./CYPRESS_GUIDE.md) pour le guide complet.
 
 ## 📚 Documentation Générée
 
@@ -189,43 +272,6 @@ npm run jsdoc
 ```
 
 La documentation HTML est disponible dans `public/docs/`.
-
-## 🧪 Exemples de Tests
-
-### Tests Unitaires (Validations)
-```javascript
-// Exemple: Validation de majorité
-it('should reject someone under 18', () => {
-  const date = new Date();
-  date.setFullYear(date.getFullYear() - 17);
-  const dateString = date.toISOString().split('T')[0];
-  
-  const result = validateDateOfBirth(dateString);
-  expect(result.isValid).toBe(false);
-  expect(result.error).toContain('18 ans');
-});
-```
-
-### Tests d'Intégration (Composant)
-```javascript
-// Exemple: Soumission réussie
-it('should successfully submit valid form and save to localStorage', async () => {
-  render(<RegisterForm />);
-  
-  // Remplir le formulaire...
-  fireEvent.change(screen.getByTestId('input-firstName'), 
-    { target: { value: 'Jean' } });
-  
-  // Soumettre
-  fireEvent.click(screen.getByRole('button', { name: /S'enregistrer/ }));
-  
-  // Vérifier la sauvegarde
-  await waitFor(() => {
-    const users = JSON.parse(localStorage.getItem('users'));
-    expect(users).toHaveLength(1);
-  });
-});
-```
 
 ## 🔍 Cas de Test Couverts
 
@@ -245,107 +291,60 @@ it('should successfully submit valid form and save to localStorage', async () =>
 - Codes postaux invalides
 - Dates futures/invalides
 
+### 🌐 Cas API (Mocking)
+- Succès 200/201 : Lecture et création d'utilisateurs
+- Erreur 400 : Email déjà utilisé → message spécifique
+- Erreur 500 : Serveur indisponible → alerte globale
+- Erreur réseau : Connexion coupée → gestion gracieuse
+- Singleton axios : Réutilisation du client entre appels
+
 ### 🔗 Cas d'Intégration
 - Soumission avec champs vides
 - Erreurs multiples simultanées
-- Sauvegarde unique et multiple
-- Message de succès et disparition
+- Soumission réussie via API mock
+- Message de succès et disparition (2s)
 - Nettoyage du formulaire
-- localStorage persistant
-
-## 💾 Données Stockées
-
-Structure dans localStorage:
-```javascript
-{
-  "users": [
-    {
-      "id": 1705102030000,
-      "firstName": "Jean",
-      "lastName": "Dupont",
-      "email": "jean@example.com",
-      "dateOfBirth": "2000-01-01",
-      "city": "Paris",
-      "postalCode": "75001",
-      "registeredAt": "2025-02-13T10:30:45.123Z"
-    }
-  ]
-}
-```
-
-## 📖 Fonction de Validation
-
-Chaque fonction retourne :
-```javascript
-{
-  isValid: boolean,
-  error: string  // Message d'erreur si invalide
-}
-```
-
-Exemples:
-```javascript
-validateName('Jean')           // { isValid: true, error: '' }
-validateName('J')              // { isValid: false, error: '...' }
-validateEmail('user@test.com') // { isValid: true, error: '' }
-validatePostalCode('75001')    // { isValid: true, error: '' }
-validatePostalCode('750')      // { isValid: false, error: '...' }
-```
+- Erreur 400 sur le champ email
+- Erreur 500 affichée en alerte globale
 
 ## 🛠️ Commandes Disponibles
 
 | Commande | Description |
 |----------|-------------|
 | `npm start` | Lance l'app en développement |
-| `npm test` | Lance les tests unitaires/intégration (mode watch) |
+| `npm test` | Lance les 82 tests Jest avec couverture |
 | `npm run cypress` | Ouvre l'interface Cypress interactive |
 | `npx cypress run` | Exécute les tests E2E en mode headless |
 | `npm run jsdoc` | Génère la documentation JSDoc dans public/docs |
 | `npm run build` | Build production |
-| `npm run test -- --coverage --watchAll=false` | Tests avec rapport couverture complet |
 
 ## 📚 Documentation Complète
 
 Fichiers de documentation disponibles :
 
-- [DOCUMENTATION.md](./DOCUMENTATION.md) - Documentation technique exhaustive
-  - Détails de chaque fonction de validation
-  - Guide de test complet
-  - Architecture détaillée
-  - Dépannage
-  
-- [CYPRESS_GUIDE.md](./CYPRESS_GUIDE.md) - Guide des tests E2E
-  - Configuration Cypress
-  - Écriture de tests E2E
-  - Patterns et bonnes pratiques
-  - Résolution de problèmes
-  
-- [RESUME_PROJET.md](./RESUME_PROJET.md) - Résumé exécutif du projet
-  - Vue d'ensemble
-  - Points forts
-  - Statistiques du projet
+- [CYPRESS_GUIDE.md](./CYPRESS_GUIDE.md) - Guide des tests E2E avec cy.intercept
 
 ## 🎓 Points d'Apprentissage
 
 Ce projet couvre :
-- **React fundamentals** : Hooks (useState, useEffect), lifecycle, state management
-- **Testing** : Tests unitaires avec Jest, tests d'intégration avec React Testing Library, tests E2E avec Cypress
-- **Validation** : Expressions régulières, logique de validation complexe, gestion d'erreurs
-- **localStorage API** : Persistance de données côté client
-- **Patterns de test** : AAA (Arrange, Act, Assert), Best practices
-- **Documentation** : JSDoc, Markdown, commentaires descriptifs
-- **Best practices** : Tests first, code modulaire, couverture maximale
+- **React fundamentals** : Hooks (useState, useEffect, useContext), Context API, React Router v6
+- **Intégration API** : Axios, JSONPlaceholder, architecture découplée
+- **Mocking réseau** : `jest.mock('axios')` pour tests unitaires/intégration, `cy.intercept` pour E2E
+- **Résilience** : Gestion des erreurs HTTP 400/500, fallback localStorage
+- **Testing** : Tests unitaires (Jest), tests d'intégration (RTL), tests E2E (Cypress)
+- **Validation** : Expressions régulières, logique de validation complexe
+- **CI/CD** : GitHub Actions pipeline (3 jobs : UT/IT → E2E → Build)
+- **Patterns de test** : AAA (Arrange, Act, Assert), async/await, act(), waitFor()
 
 ## ✨ Points Forts
 
-✅ **Couverture maximale** : 99.11% de code métier testé
-✅ **Tests exhaustifs** : 79 tests (unitaires + intégration + E2E)
-✅ **Tests E2E** : Cypress avec 13 tests réalistes
-✅ **Documentation** : JSDoc auto-généré + guides complets
-✅ **Code maintenable** : Architecture modulaire, fonctions pures
-✅ **Validation robuste** : Cas limites couverts (accents, tirets, majuscules)
-✅ **UX/UI soignée** : Messages clairs, compteur utilisateur, responsive
-✅ **Version control** : GitHub avec CI/CD workflows
+✅ **82 tests Jest** : 4 suites, 0 échec
+✅ **14 tests E2E Cypress** : Avec `cy.intercept` (plus de localStorage)
+✅ **Mocking complet** : `jest.mock('axios')` + `cy.intercept` pour isolation réseau
+✅ **Résilience testée** : Scénarios 200, 400, 500 couverts en Jest ET Cypress
+✅ **Architecture découplée** : API layer séparé, Context API, lazy-init singleton
+✅ **CI/CD** : Pipeline GitHub Actions avec `REACT_APP_API_URL`
+✅ **Code maintenable** : Architecture modulaire, fonctions pures, documentation JSDoc
 
 ## 📞 Dépannage
 
@@ -356,10 +355,10 @@ npm install
 npm test
 ```
 
-**Erreur localStorage ?**
-- Vérifier console (F12)
-- LocalStorage requiert HTTPS en production
-- Vérifier paramètres navigateur
+**Erreur API en développement ?**
+- Vérifier la variable `REACT_APP_API_URL` dans `.env`
+- JSONPlaceholder peut avoir des limites de requêtes
+- L'app utilise un fallback localStorage automatique
 
 ## 📄 Licence
 
@@ -367,22 +366,14 @@ Projet créé à titre pédagogique pour l'École YNOV.
 
 ---
 
-**Projet finalisé** avec succès ✅
-
-**Statistiques du Projet :**
-- Couverture de code : 99.11% (métier), 90.69% (overall)
-- 79 tests au total
-- 2 fichiers de configuration (Cypress, JSDoc)
-- 4 fichiers de documentation
-- 100% de couverture des cas d'usage
-
 **Technologies utilisées :**
-- React 18+ avec Hooks
-- Jest pour les tests unitaires
-- React Testing Library pour les tests d'intégration
-- Cypress pour les tests E2E
-- JSDoc pour la documentation
-- localStorage pour la persistance
-- GitHub pour le version control
+- React 19 avec Hooks + Context API
+- React Router v6 (navigation SPA)
+- Axios (appels HTTP)
+- JSONPlaceholder (API de test)
+- Jest + React Testing Library (tests unitaires/intégration)
+- Cypress 15 (tests E2E avec `cy.intercept`)
+- GitHub Actions (CI/CD)
+- JSDoc (documentation)
 
 ---

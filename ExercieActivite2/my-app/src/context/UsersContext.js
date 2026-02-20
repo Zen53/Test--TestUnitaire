@@ -37,7 +37,7 @@ export const UsersProvider = ({ children }) => {
         setIsLoading(true);
         setError(null);
         const data = await fetchUsers();
-        setUsers(data);
+        setUsers(data || []);
         // Synchroniser avec localStorage pour fallback offline
         localStorage.setItem('users', JSON.stringify(data));
       } catch (err) {
@@ -76,8 +76,9 @@ export const UsersProvider = ({ children }) => {
       return { success: true };
     } catch (err) {
       const errorMessage = err.message || 'Erreur lors de l\'ajout de l\'utilisateur';
+      const status = err.status || 0;
       setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, status };
     }
   };
 

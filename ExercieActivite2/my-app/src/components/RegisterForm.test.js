@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RegisterForm from './RegisterForm';
 import { UsersProvider } from '../context/UsersContext';
@@ -48,6 +48,9 @@ describe('RegisterForm Integration Tests', () => {
   beforeEach(() => {
     localStorage.clear();
     jest.clearAllMocks();
+    // Re-initialiser les mocks (CRA5 resetMocks: true les supprime entre tests)
+    const api = require('../api/api');
+    api.fetchUsers.mockResolvedValue([]);
   });
 
   it('should render the form with all fields', async () => {
@@ -415,7 +418,7 @@ describe('RegisterForm Integration Tests', () => {
     });
   });
 
-  it('should hide success message after 3 seconds', async () => {
+  it('should hide success message after 2 seconds', async () => {
     const { createUser } = require('../api/api');
     createUser.mockResolvedValue({
       id: 1,
@@ -431,11 +434,9 @@ describe('RegisterForm Integration Tests', () => {
     jest.useFakeTimers();
     renderForm();
 
-    // Wait for async loading in UsersContext to complete
-    await waitFor(() => {
-      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
-    });
-    
+    // Flush initial async (fetchUsers promise)
+    await act(async () => {});
+
     const today = new Date();
     const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
     const dateString = birthDate.toISOString().split('T')[0];
@@ -447,27 +448,92 @@ describe('RegisterForm Integration Tests', () => {
     fireEvent.change(screen.getByTestId('input-city'), { target: { value: 'Paris' } });
     fireEvent.change(screen.getByTestId('input-postalCode'), { target: { value: '75001' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /S'enregistrer/ }));
+    // Submit (flush async handlers)
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /S'enregistrer/ }));
+    });
 
     // Message should be visible
-    await waitFor(() => {
-      expect(screen.getByTestId('success-message')).toBeInTheDocument();
-    });
-
-    // Fast-forward time by 2500ms (before 3 seconds) - message should still be visible
-    jest.advanceTimersByTime(2500);
-
-    // Message should still be visible
     expect(screen.getByTestId('success-message')).toBeInTheDocument();
 
-    // Fast-forward time by 500ms more (total 3 seconds)
-    jest.advanceTimersByTime(500);
+    // Advance 1500ms (before 2s timeout) – message still visible
+    act(() => { jest.advanceTimersByTime(1500); });
+    expect(screen.getByTestId('success-message')).toBeInTheDocument();
 
-    // Message should be gone
-    await waitFor(() => {
-      expect(screen.queryByTestId('success-message')).not.toBeInTheDocument();
-    });
+    // Advance 1000ms more (total 2.5s, past 2s timeout) – message gone
+    act(() => { jest.advanceTimersByTime(1000); });
+    expect(screen.queryByTestId('success-message')).not.toBeInTheDocument();
 
     jest.useRealTimers();
+  });
+
+  /* ══════ Tests de résilience aux erreurs serveur ══════ */
+
+  it('should display API 400 error on email field (duplicate email)', async () => {
+    const { createUser } = require('../api/api');
+    const err400 = new Error('Cet email est d\u00e9j\u00e0 utilis\u00e9');
+    err400.status = 400;
+    createUser.mockRejectedValue(err400);
+
+    renderForm();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
+
+    const today = new Date();
+    const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
+    const dateString = birthDate.toISOString().split('T')[0];
+
+    fireEvent.change(screen.getByTestId('input-firstName'), { target: { value: 'Marie' } });
+    fireEvent.change(screen.getByTestId('input-lastName'), { target: { value: 'Martin' } });
+    fireEvent.change(screen.getByTestId('input-email'), { target: { value: 'jean@example.com' } });
+    fireEvent.change(screen.getByTestId('input-dateOfBirth'), { target: { value: dateString } });
+    fireEvent.change(screen.getByTestId('input-city'), { target: { value: 'Lyon' } });
+    fireEvent.change(screen.getByTestId('input-postalCode'), { target: { value: '69000' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /S'enregistrer/ }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('error-email')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('error-email')).toHaveTextContent('d\u00e9j\u00e0 utilis\u00e9');
+    expect(screen.queryByTestId('success-message')).not.toBeInTheDocument();
+  });
+
+  it('should display API 500 error as form alert (server crash)', async () => {
+    const { createUser } = require('../api/api');
+    const err500 = new Error('Le serveur est temporairement indisponible. Veuillez r\u00e9essayer plus tard.');
+    err500.status = 500;
+    createUser.mockRejectedValue(err500);
+
+    renderForm();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Chargement/i)).not.toBeInTheDocument();
+    });
+
+    const today = new Date();
+    const birthDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
+    const dateString = birthDate.toISOString().split('T')[0];
+
+    fireEvent.change(screen.getByTestId('input-firstName'), { target: { value: 'Test' } });
+    fireEvent.change(screen.getByTestId('input-lastName'), { target: { value: 'User' } });
+    fireEvent.change(screen.getByTestId('input-email'), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByTestId('input-dateOfBirth'), { target: { value: dateString } });
+    fireEvent.change(screen.getByTestId('input-city'), { target: { value: 'Paris' } });
+    fireEvent.change(screen.getByTestId('input-postalCode'), { target: { value: '75000' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /S'enregistrer/ }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('error-form')).toBeInTheDocument();
+    });
+
+    // L'application ne plante pas – le formulaire est toujours interactif
+    expect(screen.getByTestId('error-form')).toHaveTextContent('indisponible');
+    expect(screen.queryByTestId('success-message')).not.toBeInTheDocument();
+    expect(screen.getByTestId('input-firstName')).toBeInTheDocument();
   });
 });

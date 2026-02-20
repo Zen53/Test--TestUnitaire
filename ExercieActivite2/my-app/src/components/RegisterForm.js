@@ -66,7 +66,13 @@ function RegisterForm({ onRegistered }) {
       const result = await addUser(formData);
 
       if (!result.success) {
-        setErrors({ email: result.error });
+        if (result.status >= 500) {
+          // Crash serveur → alerte utilisateur globale
+          setErrors({ form: result.error });
+        } else {
+          // Erreur métier (400) → message spécifique sur le champ email
+          setErrors({ email: result.error });
+        }
         setSubmitted(false);
         return;
       }

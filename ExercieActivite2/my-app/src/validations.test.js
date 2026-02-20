@@ -155,10 +155,12 @@ describe('validateDateOfBirth', () => {
   });
 
   it('should validate someone turning 18 this month but not yet on this day', () => {
-    const date = new Date();
-    date.setFullYear(date.getFullYear() - 18);
-    date.setDate(date.getDate() + 1);
-    const dateString = date.toISOString().split('T')[0];
+    const today = new Date();
+    // Construire la date en utilisant les composantes locales (évite le décalage UTC)
+    const year = today.getFullYear() - 18;
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate() + 1).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
     
     const result = validateDateOfBirth(dateString);
     expect(result.isValid).toBe(false);
